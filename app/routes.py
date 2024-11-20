@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
-from utils import extract_text
+
+from .utils import extract_text
 main = Blueprint('main', __name__)
 
 @main.route('/')
@@ -8,7 +9,7 @@ def home():
 
 @main.route("/extract_text", methods=["POST"])
 def get_text_from_file():
-   data = request.json()
+   data = request.json
    file_name  = data["file_name"]
    text  = extract_text(file_name)
    return jsonify({"text": text}),200
