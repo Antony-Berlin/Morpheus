@@ -1,12 +1,27 @@
 from flask import Blueprint, jsonify, request
 
-from .utils import extract_text,get_topics, get_questions_and_answers
+from .utils import extract_text, get_topics, get_questions_and_answers, handle_file_upload
+import os
 main = Blueprint('main', __name__)
 
 @main.route('/')
 def home():
     return jsonify({"message": "hello mic check 1, 2, 3"})
 
+
+@main.route("/upload_file", methods=["POST"])
+def upload_file():
+    if 'file' not in request.files:
+        return jsonify({"error": "No file part"}), 400
+    file = request.files['file']
+    response, status_code = handle_file_upload(file)
+    return jsonify(response), status_code
+
+@main.route("/get_files", methods=["GET"])
+def get_files():
+    files = os.listdir("Documents")
+    return jsonify({"files": files}), 200
+        
 @main.route("/extract_text", methods=["POST"])
 def get_text_from_file():
    data = request.json

@@ -117,3 +117,23 @@ def get_questions_and_answers(topic, text, about_proff, proff_sample_question, n
         print(f"Response text: {response}")
 
     return qa
+
+def handle_file_upload(file):
+    if file.filename == '':
+        return {"error": "No selected file"}, 400
+    if file and allowed_file(file.filename):
+        filename = file.filename
+        file_path = os.path.join(os.getcwd(), "Documents", filename)
+        
+        if os.path.exists(file_path):
+            return {"error": "File already exists"}, 400
+        
+        file.save(file_path)
+        print("Document uploaded successfully")
+        return {"message": "File uploaded successfully", "file_path": file_path}, 200
+    else:
+        return {"error": "File type not allowed"}, 400
+
+def allowed_file(filename):
+    ALLOWED_EXTENSIONS = {'pdf', 'ppt', 'pptx'}
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
