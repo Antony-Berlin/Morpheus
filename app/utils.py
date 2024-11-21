@@ -2,17 +2,35 @@
 import PyPDF2
 from pptx import Presentation
 from dotenv import load_dotenv
-import google.generativeai as genai
+from openai import OpenAI
 import os, json, time
 
 
 def init():
     load_dotenv()
-    genai.configure(api_key=os.getenv("GEMINI_API"))
-    print("geniai configured...")
-    global model 
-    model = genai.GenerativeModel("gemini-1.5-flash")
-    print("model loaded...")
+    global client
+    client = OpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=os.getenv("OPEN_ROUTER_API_KEY"),
+    )
+    print("generative AI client initialized ...")
+
+def chat(system_message : str , prompt : str):
+    completion = client.chat.completions.create(
+
+        model="meta-llama/llama-3.2-3b-instruct:free",
+        messages=[
+            {
+                "role": "system",
+                "content": system_message
+            },
+            {
+            "role": "user",
+            "content": prompt
+            }
+        ]
+    )
+    return completion.choices[0].message.content
 
 def extract_text(file_name):
     print("extracting text from file...")
@@ -48,7 +66,8 @@ def extract_text(file_name):
 
 def get_topics(text):
     print("generating topics...")
-    prompt = "return the list of Major topics sperated by comma in the below paragraph. just the list no any other sentence or context\n" + text
-    response = model.generate_content(prompt)
+    system_message = "you are expert in providing the list of topics given a paragraph.you're response is always comma seperated topics no other sentence is required. help the student by giving the topics from his notes"
+    prompt = "give me the topics from the below student notes:\n" + text
+    response = chat(system_message, prompt)
     
-    return response.text.split(",")
+    return response.split(",")
