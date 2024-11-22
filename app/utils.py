@@ -112,11 +112,13 @@ def get_questions_and_answers(topic, text, about_proff, proff_sample_question, n
     except json.JSONDecodeError as e:
         print(f"Failed to decode JSON response: {e}")
         print(f"Response text: {response}")
+        return {"error": "Failed to decode JSON response"}, 400
     except Exception as e:
         print(f"An error occurred: {e}")
         print(f"Response text: {response}")
+        return {"error": "An error occurred"}, 400
 
-    return qa
+    return qa, 200
 
 def handle_file_upload(file):
     if file.filename == '':
@@ -126,13 +128,13 @@ def handle_file_upload(file):
         file_path = os.path.join(os.getcwd(), "Documents", filename)
         
         if os.path.exists(file_path):
-            return {"error": "File already exists"}, 400
+            return {"error": "File already exists"}, 409
         
         file.save(file_path)
         print("Document uploaded successfully")
-        return {"message": "File uploaded successfully", "file_path": file_path}, 200
+        return {"message": "File uploaded successfully", "file_path": file_path}, 201
     else:
-        return {"error": "File type not allowed"}, 400
+        return {"error": "File type not allowed"}, 415
 
 def allowed_file(filename):
     ALLOWED_EXTENSIONS = {'pdf', 'ppt', 'pptx'}

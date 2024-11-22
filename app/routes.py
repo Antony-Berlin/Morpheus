@@ -19,8 +19,19 @@ def upload_file():
 
 @main.route("/get_files", methods=["GET"])
 def get_files():
+    print("getting files...")
     files = os.listdir("Documents")
+    print(files)
     return jsonify({"files": files}), 200
+
+@main.route("/delete_file", methods=["POST"])
+def delete_file():
+    data = request.json
+    file_name = data["file_name"]
+    if not os.path.exists(f"Documents/{file_name}"):
+        return jsonify({"error": "File does not exist"}), 404
+    os.remove(f"Documents/{file_name}")
+    return jsonify({"message": "file deleted"}), 204
         
 @main.route("/extract_text", methods=["POST"])
 def get_text_from_file():
@@ -44,5 +55,5 @@ def get_questions_from_topic():
     prof_sample_question = data["prof_sample_question"]
     file_text = data["file_text"]
     no_of_quesitons = data["no_of_questions"]
-    questions = get_questions_and_answers(topic, file_text, about_prof, prof_sample_question, no_of_quesitons)
-    return jsonify(questions),200
+    questions,status_code = get_questions_and_answers(topic, file_text, about_prof, prof_sample_question, no_of_quesitons)
+    return jsonify(questions),status_code
