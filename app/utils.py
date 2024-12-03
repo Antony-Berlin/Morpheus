@@ -52,16 +52,16 @@ def extract_text(file_name):
     elif file_extension == '.pdf':
         text_runs = []
         with open(file_path, 'rb') as pdf_file:
-            reader = PyPDF2.PdfFileReader(pdf_file)
-            for page_num in range(reader.numPages):
-                page = reader.getPage(page_num)
-                text_runs.append(page.extractText())
+            reader = PyPDF2.PdfReader(pdf_file)
+            for page_num in range(len(reader.pages)):
+                page = reader.pages[page_num]
+                text_runs.append(page.extract_text())
                 text_runs.append("-"*10)
         text = "\n".join(text_runs)
     
     else:
         raise ValueError("Unsupported file format. Please provide a PPT, PPTX, or PDF file.")
-
+        text = text.replace("\n", " ")
     return text
 
 
@@ -145,6 +145,9 @@ def add_proff_profile(prof_name, about_prof, prof_sample_question):
     file_path = os.path.join(os.getcwd(), "proff_profile.csv")
     file_exists = os.path.isfile(file_path)
 
+    # Ensure the sample question is a single string
+    prof_sample_question = prof_sample_question.replace("\n", " ").replace("\r", " ")
+
     if file_exists:
         with open(file_path, mode='r', newline='') as file:
             reader = csv.reader(file)
@@ -158,7 +161,7 @@ def add_proff_profile(prof_name, about_prof, prof_sample_question):
             writer.writerow(["prof_name", "about_prof", "prof_sample_question"])
         writer.writerow([prof_name, about_prof, prof_sample_question])
 
-    return {"message": "Professor profile added successfully"}, 201
+    return {"message": "Professor profile added successfully", "proff_name": prof_name}, 201
 
 def get_proff_profile_data(prof_name):
     file_path = os.path.join(os.getcwd(), "proff_profile.csv")
@@ -190,7 +193,6 @@ def delete_proff_profile_data(prof_name):
         for row in rows:
             if row and row[0] != prof_name:
                 writer.writerow(row)
-    print("tesst")
     return {"message": "Professor profile deleted successfully"}, 200
 
 def get_all_proff_name():
@@ -204,3 +206,4 @@ def get_all_proff_name():
         return {"professors": [row[0] for row in reader]},200
 
     return {"error": "Professor profile does not exist"}, 404
+

@@ -84,3 +84,4 @@ def delete_proff_profile():
 def get_all_proff():
     response, status_code = get_all_proff_name()
     return jsonify(response), status_code
+
