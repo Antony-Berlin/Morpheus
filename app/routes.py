@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 
-from .utils import extract_text, get_topics, get_questions_and_answers, handle_file_upload
+from .utils import extract_text, get_topics, get_questions_and_answers, handle_file_upload, add_proff_profile, get_proff_profile_data, delete_proff_profile_data, get_all_proff_name
 import os
 main = Blueprint('main', __name__)
 
@@ -57,3 +57,30 @@ def get_questions_from_topic():
     no_of_quesitons = data["no_of_questions"]
     questions,status_code = get_questions_and_answers(topic, file_text, about_prof, prof_sample_question, no_of_quesitons)
     return jsonify(questions),status_code
+
+@main.route("/add_proff_profile", methods=["POST"])
+def add_proff():
+    data = request.json
+    prof_name = data["prof_name"]
+    about_prof = data["about_prof"]
+    prof_sample_question = data["prof_sample_question"]
+    response, status_code = add_proff_profile(prof_name, about_prof, prof_sample_question)
+    return jsonify(response), status_code
+
+@main.route("/get_proff_profile", methods=["POST"])
+def get_proff_profile():
+    proff_name = request.json["proff_name"]
+    response, status_code = get_proff_profile_data(proff_name)
+    return jsonify(response), status_code
+
+@main.route("/delete_proff_profile", methods=["POST"])
+def delete_proff_profile():
+    data = request.json
+    prof_name = data["proff_name"]
+    response, status_code = delete_proff_profile_data(prof_name)
+    return jsonify(response), status_code
+
+@main.route("/get_all_proff_profile", methods=["GET"])
+def get_all_proff():
+    response, status_code = get_all_proff_name()
+    return jsonify(response), status_code

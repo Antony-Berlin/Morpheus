@@ -4,6 +4,7 @@ from pptx import Presentation
 from dotenv import load_dotenv
 from openai import OpenAI
 import os, json, time
+import csv
 
 
 def init():
@@ -132,10 +133,74 @@ def handle_file_upload(file):
         
         file.save(file_path)
         print("Document uploaded successfully")
-        return {"message": "File uploaded successfully", "file_path": file_path}, 201
+        return {"message": "File uploaded successfully", "file_name": filename}, 201
     else:
         return {"error": "File type not allowed"}, 415
 
 def allowed_file(filename):
     ALLOWED_EXTENSIONS = {'pdf', 'ppt', 'pptx'}
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def add_proff_profile(prof_name, about_prof, prof_sample_question):
+    file_path = os.path.join(os.getcwd(), "proff_profile.csv")
+    file_exists = os.path.isfile(file_path)
+
+    if file_exists:
+        with open(file_path, mode='r', newline='') as file:
+            reader = csv.reader(file)
+            for row in reader:
+                if row and row[0] == prof_name:
+                    return {"error": "Professor profile already exists"}, 409
+
+    with open(file_path, mode='a', newline='') as file:
+        writer = csv.writer(file)
+        if not file_exists:
+            writer.writerow(["prof_name", "about_prof", "prof_sample_question"])
+        writer.writerow([prof_name, about_prof, prof_sample_question])
+
+    return {"message": "Professor profile added successfully"}, 201
+
+def get_proff_profile_data(prof_name):
+    file_path = os.path.join(os.getcwd(), "proff_profile.csv")
+    if not os.path.exists(file_path):
+        return {"error": "Professor profile does not exist"}, 404
+
+    with open(file_path, mode='r', newline='') as file:
+        reader = csv.reader(file)
+        for row in reader:
+            if row and row[0] == prof_name:
+                return {"prof_name": row[0], "about_prof": row[1], "prof_sample_question": row[2]}, 200
+
+    return {"error": "Professor profile does not exist"}, 404
+
+def delete_proff_profile_data(prof_name):
+    file_path = os.path.join(os.getcwd(), "proff_profile.csv")
+    if not os.path.exists(file_path):
+        return {"error": "Professor profile does not exist"}, 404
+
+    with open(file_path, mode='r', newline='') as file:
+        reader = csv.reader(file)
+        rows = list(reader)
+
+    if len(rows) <= 1:
+        return {"error": "Professor profile does not exist"}, 404
+
+    with open(file_path, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        for row in rows:
+            if row and row[0] != prof_name:
+                writer.writerow(row)
+    print("tesst")
+    return {"message": "Professor profile deleted successfully"}, 200
+
+def get_all_proff_name():
+    file_path = os.path.join(os.getcwd(), "proff_profile.csv")
+    if not os.path.exists(file_path):
+        return {"error": "Professor profile does not exist"}, 404
+
+    with open(file_path, mode='r', newline='') as file:
+        reader = csv.reader(file)
+        next(reader)
+        return {"professors": [row[0] for row in reader]},200
+
+    return {"error": "Professor profile does not exist"}, 404
