@@ -44,7 +44,8 @@ def get_text_from_file():
 def get_topics_from_text():
     data = request.json
     text = data["text"]
-    topics = get_topics(text)
+    no_of_questions = data["no_of_questions"]
+    topics = get_topics(text, no_of_questions)
     return jsonify({"topics": topics}),200
 
 @main.route("/get_questions", methods=["POST"])
@@ -55,7 +56,8 @@ def get_questions_from_topic():
     prof_sample_question = data["prof_sample_question"]
     file_text = data["file_text"]
     no_of_quesitons = data["no_of_questions"]
-    questions,status_code = get_questions_and_answers(topic, file_text, about_prof, prof_sample_question, no_of_quesitons)
+    prev_questions = data["questions"]
+    questions,status_code = get_questions_and_answers(topic, file_text, about_prof, prof_sample_question, no_of_quesitons, prev_questions)
     return jsonify(questions),status_code
 
 @main.route("/add_proff_profile", methods=["POST"])

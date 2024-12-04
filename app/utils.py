@@ -2,36 +2,32 @@
 import PyPDF2
 from pptx import Presentation
 from dotenv import load_dotenv
-from openai import OpenAI
+
+import google.generativeai as genai
 import os, json, time
 import csv
 
 
 def init():
     load_dotenv()
-    global client
-    client = OpenAI(
-        base_url="https://openrouter.ai/api/v1",
-        api_key=os.getenv("OPEN_ROUTER_API_KEY"),
-    )
+    global model 
+
+    genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+    model = genai.GenerativeModel("gemini-1.5-flash")
     print("generative AI client initialized ...")
 
 def chat(system_message : str , prompt : str):
-    completion = client.chat.completions.create(
 
-        model="meta-llama/llama-3.2-3b-instruct:free",
-        messages=[
-            {
-                "role": "system",
-                "content": system_message
-            },
-            {
-            "role": "user",
-            "content": prompt
-            }
-        ]
-    )
-    return completion.choices[0].message.content
+    response = None
+    for _ in range(3):  # Retry up to 3 times
+        try:
+            response = model.generate_content(system_message + "\n" + prompt)
+            break  # Exit loop if successful
+        except Exception as e:
+            print(f"Error occurred: {e}. Retrying in 10 seconds...")
+            time.sleep(15)
+
+    return response.text
 
 def extract_text(file_name):
     print("extracting text from file...")
@@ -65,45 +61,59 @@ def extract_text(file_name):
     return text
 
 
-def get_topics(text):
+def get_topics(text, no_of_questions):
     print("generating topics...")
+    no_of_questions = int(no_of_questions)
+    if no_of_questions == 0:
+        return []
+    if(no_of_questions%2 ==0):
+        max = no_of_questions/2
+    elif(no_of_questions%3 == 0):
+        max = no_of_questions/3
+    else:
+        max = no_of_questions/5
+    print(max)
     system_message = "you are expert in providing the list of topics given a paragraph.you're response is always comma seperated topics no other sentence is required. help the student by giving the topics from his notes"
-    prompt = "give me the topics from the below student notes:\n" + text
-    response = chat(system_message=system_message,prompt=prompt)
+    prompt = "give me only "+ str(max) + " major topics from the below student notes:\n" + text
+    response = chat(system_message=system_message, prompt=prompt)
     
-    return response.split(",")
+    topics = response.split(",")
+    print(topics)
+    print(len(topics))
+    return topics[:int(max)]
 
 
 
-def get_questions_and_answers(topic, text, about_proff, proff_sample_question, no_of_questions):
+def get_questions_and_answers(topic, text, about_proff, proff_sample_question, no_of_questions, prev_questions):
   
-    request_count = 0
-    max_requests_per_minute = 15
-    start_time = time.time()
+    # request_count = 0
+    # max_requests_per_minute = 15
+    # start_time = time.time()
     qa = []
 
     
-    if request_count >= max_requests_per_minute:
-        elapsed_time = time.time() - start_time
-        remaining_time = 65 - elapsed_time
-        if remaining_time > 0:
-            print(f"Rate limit reached. Waiting for {remaining_time:.2f} seconds...")
-            time.sleep(remaining_time)
-        start_time = time.time()  # Reset the start time after waiting
-        request_count = 0  # Reset the request count after waiting
+    # if request_count >= max_requests_per_minute:
+    #     elapsed_time = time.time() - start_time
+    #     remaining_time = 65 - elapsed_time
+    #     if remaining_time > 0:
+    #         print(f"Rate limit reached. Waiting for {remaining_time:.2f} seconds...")
+    #         time.sleep(remaining_time)
+    #     start_time = time.time()  # Reset the start time after waiting
+    #     request_count = 0  # Reset the request count after waiting
 
 
     System_message = "you are expert in mimicing the professor in generating question, options and its answer.Provide the JSON response directly without wrapping it in backticks or marking it as a code block. "
 
     prompt = (
         
-        "as a professor return the list of mcq questions with options and answers as dictionary object, the response must only have the array, shouldn't have any context or extra sentence. \n"+
-        "example: [{'question': 'what is the capital of india?', 'options': ['delhi', 'mumbai', 'kolkata', 'chennai'], 'answer': 'delhi'}, {'question': 'what is the capital of usa?', 'options': ['new york', 'washington dc', 'los angeles', 'chicago'], 'answer': 'washington dc'}]"+
+        "as a professor return the list of mcq questions with options and answers as dictionary object, the response must only have the array, shouldn't have any context or extra sentence. avoid any previous questions repetation \n"+
+        "example: [{\"question\": \"what is the capital of india?\", \"options\": [\"delhi\", \"mumbai\", \"kolkata\", \"chennai\"], \"answer\": \"delhi\"}, {\"question\": \"what is the capital of usa?\", \"options\": [\"new york\", \"washington dc\", \"los angeles\", \"chicago\"], \"answer\": \"washington dc\"}]"+
         "passage: " + text + "\n" +
         "topics: " + topic + "\n" +
         "about professor: " + about_proff + "\n" +
         "professor sample question: " + proff_sample_question + "\n" +
-        "no of questions: " + str(no_of_questions) + "\n" 
+        "no of questions: " + str(no_of_questions) + "\n" +
+        "previous questions: " + str(prev_questions) + "\n"
     )
     response = chat(system_message=System_message, prompt=prompt)
     
@@ -119,7 +129,7 @@ def get_questions_and_answers(topic, text, about_proff, proff_sample_question, n
         print(f"Response text: {response}")
         return {"error": "An error occurred"}, 400
 
-    return qa, 200
+    return qa[:(int(no_of_questions)+1)], 200
 
 def handle_file_upload(file):
     if file.filename == '':
