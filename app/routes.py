@@ -50,7 +50,9 @@ def get_topics_from_text():
 
 @main.route("/get_questions", methods=["POST"])
 def get_questions_from_topic():
+    
     data = request.json
+    print(data)
     topic = data["topic"]
     about_prof = data["about_prof"]
     prof_sample_question = data["prof_sample_question"]

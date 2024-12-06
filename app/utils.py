@@ -106,15 +106,17 @@ def get_questions_and_answers(topic, text, about_proff, proff_sample_question, n
 
     prompt = (
         
-        "as a professor return the list of mcq questions with options and answers as dictionary object, the response must only have the array, shouldn't have any context or extra sentence. avoid any previous questions repetation \n"+
         "example: [{\"question\": \"what is the capital of india?\", \"options\": [\"delhi\", \"mumbai\", \"kolkata\", \"chennai\"], \"answer\": \"delhi\"}, {\"question\": \"what is the capital of usa?\", \"options\": [\"new york\", \"washington dc\", \"los angeles\", \"chicago\"], \"answer\": \"washington dc\"}]"+
-        "passage: " + text + "\n" +
+        "content: " + text + "\n" +
         "topics: " + topic + "\n" +
         "about professor: " + about_proff + "\n" +
         "professor sample question: " + proff_sample_question + "\n" +
         "no of questions: " + str(no_of_questions) + "\n" +
-        "previous questions: " + str(prev_questions) + "\n"
+        "previous questions: " + str(prev_questions) + "\n" +
+        "as a professor u know the content and now return the list of mcq questions with options and answers as dictionary object, the response must only have the array, shouldn't have any context or extra sentence. avoid any previous questions repetation \n"
+
     )
+
     response = chat(system_message=System_message, prompt=prompt)
     
     try:
